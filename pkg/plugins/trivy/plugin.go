@@ -25,6 +25,7 @@ import (
 	"github.com/aquasecurity/trivy-operator/pkg/trivyoperator"
 	"github.com/aquasecurity/trivy-operator/pkg/vulnerabilityreport"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -50,6 +51,7 @@ const (
 	keyTrivyImageTag        = "trivy.tag"
 	//nolint:gosec
 	keyTrivyImagePullSecret                     = "trivy.imagePullSecret"
+	keyTrivyImagePullPolicy                     = "trivy.imagePullPolicy"
 	keyTrivyMode                                = "trivy.mode"
 	keyTrivyAdditionalVulnerabilityReportFields = "trivy.additionalVulnerabilityReportFields"
 	keyTrivyCommand                             = "trivy.command"
@@ -97,6 +99,7 @@ const (
 
 const (
 	DefaultImageRepository  = "ghcr.io/aquasecurity/trivy"
+	DefaultImagePullPolicy  = "IfNotPresent"
 	DefaultDBRepository     = "ghcr.io/aquasecurity/trivy-db"
 	DefaultJavaDBRepository = "ghcr.io/aquasecurity/trivy-java-db"
 	DefaultSeverity         = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
@@ -183,6 +186,14 @@ func (c Config) GetImageTag() (string, error) {
 		return "", err
 	}
 	return tag, nil
+}
+
+func (c Config) GetImagePullPolicy() (string, error) {
+	pullPolicy, err := c.GetRequiredData(keyTrivyImagePullPolicy)
+	if err != nil {
+		return "", err
+	}
+	return pullPolicy, nil
 }
 
 func (c Config) GetImagePullSecret() []corev1.LocalObjectReference {
@@ -553,6 +564,7 @@ func (p *plugin) Init(ctx trivyoperator.PluginContext) error {
 		Data: map[string]string{
 			keyTrivyImageRepository:           DefaultImageRepository,
 			keyTrivyImageTag:                  "0.42.0",
+			keyTrivyImagePullPolicy:           DefaultImagePullPolicy,
 			KeyTrivySeverity:                  DefaultSeverity,
 			keyTrivySlow:                      "true",
 			keyTrivyMode:                      string(Standalone),
@@ -608,6 +620,7 @@ func (p *plugin) GetScanJobSpec(ctx trivyoperator.PluginContext, workload client
 	}
 	// add image pull secret to be used when pulling trivy image fom private registry
 	podSpec.ImagePullSecrets = config.GetImagePullSecret()
+
 	return podSpec, secrets, err
 }
 
@@ -680,6 +693,11 @@ func (p *plugin) getPodSpecForStandaloneMode(ctx trivyoperator.PluginContext, co
 	}
 
 	trivyImageRef, err := config.GetImageRef()
+	if err != nil {
+		return corev1.PodSpec{}, nil, err
+	}
+
+	trivyImagePullPolicy, err := config.GetImagePullPolicy()
 	if err != nil {
 		return corev1.PodSpec{}, nil, err
 	}
@@ -851,7 +869,7 @@ func (p *plugin) getPodSpecForStandaloneMode(ctx trivyoperator.PluginContext, co
 		containers = append(containers, corev1.Container{
 			Name:                     c.Name,
 			Image:                    trivyImageRef,
-			ImagePullPolicy:          corev1.PullIfNotPresent,
+			ImagePullPolicy:          v1.PullPolicy(trivyImagePullPolicy),
 			TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 			Env:                      env,
 			Command:                  cmd,

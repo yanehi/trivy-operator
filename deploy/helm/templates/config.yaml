@@ -93,6 +93,7 @@ metadata:
 data:
   trivy.repository: "{{ required ".Values.trivy.image.registry is required" .Values.trivy.image.registry }}/{{ required ".Values.trivy.image.repository is required" .Values.trivy.image.repository }}"
   trivy.tag: {{ required ".Values.trivy.image.tag is required" .Values.trivy.image.tag | quote }}
+  trivy.imagePullPolicy:  {{ required ".Values.trivy.image.imagePullPolicy is required" .Values.trivy.image.imagePullPolicy | quote }}
   {{- if .Values.trivy.image.imagePullSecret }}
   trivy.imagePullSecret: {{ .Values.trivy.image.imagePullSecret | quote }}
   {{- end }}

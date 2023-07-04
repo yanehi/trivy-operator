@@ -95,6 +95,7 @@ Keeps security report resources updated
 | trivy.image.registry | string | `"ghcr.io"` | registry of the Trivy image |
 | trivy.image.repository | string | `"aquasecurity/trivy"` | repository of the Trivy image |
 | trivy.image.tag | string | `"0.42.0"` | tag version of the Trivy image |
+| trivy.image.imagePullPolicy | string | `"IfNotPresent"` | image pull policy for the scan-job images |
 | trivy.insecureRegistries | object | `{}` | The registry to which insecure connections are allowed. There can be multiple registries with different keys. |
 | trivy.javaDbRegistry | string | `"ghcr.io"` | javaDbRegistry is the registry for the Java vulnerability database. |
 | trivy.javaDbRepository | string | `"aquasecurity/trivy-java-db"` |  |

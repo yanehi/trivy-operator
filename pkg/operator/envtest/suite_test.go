@@ -113,11 +113,12 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	err = pluginContext.EnsureConfig(trivyoperator.PluginConfig{
 		Data: map[string]string{
-			"trivy.repository":   trivy.DefaultImageRepository,
-			"trivy.tag":          "0.35.0",
-			"trivy.mode":         string(trivy.Standalone),
-			"trivy.slow":         "true",
-			"trivy.dbRepository": trivy.DefaultDBRepository,
+			"trivy.repository":   	  trivy.DefaultImageRepository,
+			"trivy.tag":          	  "0.35.0",
+			"trivy.imagePullPolicy":  trivy.DefaultImagePullPolicy,
+			"trivy.mode":         	  string(trivy.Standalone),
+			"trivy.slow":         	  "true",
+			"trivy.dbRepository": 	  trivy.DefaultDBRepository,
 		},
 	})
 	Expect(err).ToNot(HaveOccurred())

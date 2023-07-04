@@ -98,6 +98,46 @@ func TestConfig_GetImageRef(t *testing.T) {
 	}
 }
 
+func TestConfig_GetImagePullPolicy(t *testing.T) {
+	testCases := []struct {
+		name                    string
+		configData              trivy.Config
+		expectedError           string
+		expectedImagePullPolicy string
+	}{
+		{
+			name: "Should return image pull policy always from config data",
+			configData: trivy.Config{PluginConfig: trivyoperator.PluginConfig{
+				Data: map[string]string{
+					"trivy.imagePullPolicy": "Always",
+				},
+			}},
+			expectedImagePullPolicy: "Always",
+		},
+		{
+			name: "Should return image pull policy ifnotpresent from config data",
+			configData: trivy.Config{PluginConfig: trivyoperator.PluginConfig{
+				Data: map[string]string{
+					"trivy.imagePullPolicy": "IfNotPresent",
+				},
+			}},
+			expectedImagePullPolicy: "IfNotPresent",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			imagePullPolicy, err := tc.configData.GetImagePullPolicy()
+			if tc.expectedError != "" {
+				require.EqualError(t, err, tc.expectedError)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expectedImagePullPolicy, imagePullPolicy)
+			}
+		})
+	}
+}
+
 func TestConfig_GetAdditionalVulnerabilityReportFields(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -754,6 +794,7 @@ func TestPlugin_Init(t *testing.T) {
 			Data: map[string]string{
 				"trivy.repository":                trivy.DefaultImageRepository,
 				"trivy.tag":                       "0.42.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.severity":                  trivy.DefaultSeverity,
 				"trivy.slow":                      "true",
 				"trivy.mode":                      string(trivy.Standalone),
@@ -878,6 +919,7 @@ func TestPlugin_GetScanJobSpec(t *testing.T) {
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.Standalone),
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
 				"trivy.javaDbRepository":          trivy.DefaultJavaDBRepository,
@@ -1166,6 +1208,7 @@ func TestPlugin_GetScanJobSpec(t *testing.T) {
 			config: map[string]string{
 				"trivy.repository":                   "docker.io/aquasec/trivy",
 				"trivy.tag":                          "0.35.0",
+				"trivy.imagePullPolicy":              trivy.DefaultImagePullPolicy,
 				"trivy.mode":                         string(trivy.Standalone),
 				"trivy.insecureRegistry.pocRegistry": "poc.myregistry.harbor.com.pl",
 				"trivy.dbRepository":                 trivy.DefaultDBRepository,
@@ -1454,6 +1497,7 @@ func TestPlugin_GetScanJobSpec(t *testing.T) {
 			config: map[string]string{
 				"trivy.repository":                 "docker.io/aquasec/trivy",
 				"trivy.tag":                        "0.35.0",
+				"trivy.imagePullPolicy":            trivy.DefaultImagePullPolicy,
 				"trivy.mode":                       string(trivy.Standalone),
 				"trivy.nonSslRegistry.pocRegistry": "poc.myregistry.harbor.com.pl",
 				"trivy.dbRepository":               trivy.DefaultDBRepository,
@@ -1740,9 +1784,10 @@ func TestPlugin_GetScanJobSpec(t *testing.T) {
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.Standalone),
+				"trivy.repository":      "docker.io/aquasec/trivy",
+				"trivy.tag":             "0.35.0",
+				"trivy.imagePullPolicy": trivy.DefaultImagePullPolicy,
+				"trivy.mode":            string(trivy.Standalone),
 				"trivy.ignoreFile": `# Accept the risk
 CVE-2018-14618
 
@@ -2053,9 +2098,10 @@ CVE-2019-1543`,
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.Standalone),
+				"trivy.repository":      "docker.io/aquasec/trivy",
+				"trivy.tag":             "0.35.0",
+				"trivy.imagePullPolicy": trivy.DefaultImagePullPolicy,
+				"trivy.mode":            string(trivy.Standalone),
 				"trivy.ignorePolicy": `package trivy
 
 import data.lib.trivy
@@ -2366,9 +2412,10 @@ default ignore = false`,
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.Standalone),
+				"trivy.repository":      "docker.io/aquasec/trivy",
+				"trivy.tag":             "0.35.0",
+				"trivy.imagePullPolicy": trivy.DefaultImagePullPolicy,
+				"trivy.mode":            string(trivy.Standalone),
 
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
 				"trivy.javaDbRepository":          trivy.DefaultJavaDBRepository,
@@ -2655,6 +2702,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.Standalone),
 				"trivy.dbRepository":              "custom-registry.com/mirror/trivy-db",
 				"trivy.javaDbRepository":          "custom-registry.com/mirror/trivy-java-db",
@@ -2943,6 +2991,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.ClientServer),
 				"trivy.serverURL":                 "http://trivy.trivy:4954",
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
@@ -3172,6 +3221,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.ClientServer),
 				"trivy.serverURL":                 "http://trivy.trivy:4954",
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
@@ -3401,6 +3451,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.ClientServer),
 				"trivy.serverURL":                 "https://trivy.trivy:4954",
 				"trivy.serverInsecure":            "true",
@@ -3635,6 +3686,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                 "docker.io/aquasec/trivy",
 				"trivy.tag":                        "0.35.0",
+				"trivy.imagePullPolicy":            trivy.DefaultImagePullPolicy,
 				"trivy.mode":                       string(trivy.ClientServer),
 				"trivy.serverURL":                  "http://trivy.trivy:4954",
 				"trivy.nonSslRegistry.pocRegistry": "poc.myregistry.harbor.com.pl",
@@ -3867,10 +3919,11 @@ default ignore = false`,
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.ClientServer),
-				"trivy.serverURL":  "http://trivy.trivy:4954",
+				"trivy.repository":      "docker.io/aquasec/trivy",
+				"trivy.tag":             "0.35.0",
+				"trivy.imagePullPolicy": trivy.DefaultImagePullPolicy,
+				"trivy.mode":            string(trivy.ClientServer),
+				"trivy.serverURL":       "http://trivy.trivy:4954",
 				"trivy.ignoreFile": `# Accept the risk
 CVE-2018-14618
 
@@ -4127,10 +4180,11 @@ CVE-2019-1543`,
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.ClientServer),
-				"trivy.serverURL":  "http://trivy.trivy:4954",
+				"trivy.repository":      "docker.io/aquasec/trivy",
+				"trivy.tag":             "0.35.0",
+				"trivy.imagePullPolicy": trivy.DefaultImagePullPolicy,
+				"trivy.mode":            string(trivy.ClientServer),
+				"trivy.serverURL":       "http://trivy.trivy:4954",
 				"trivy.ignorePolicy": `package trivy
 
 import data.lib.trivy
@@ -4389,6 +4443,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.ClientServer),
 				"trivy.serverURL":                 "http://trivy.trivy:4954",
 				"trivy.dbRepository":              "custom-registry.com/mirror/trivy-db",
@@ -4618,6 +4673,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.Standalone),
 				"trivy.command":                   string(trivy.Filesystem),
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
@@ -4966,6 +5022,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.ClientServer),
 				"trivy.serverURL":                 "http://trivy.trivy:4954",
 				"trivy.command":                   string(trivy.Filesystem),
@@ -5256,6 +5313,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.Standalone),
 				"trivy.command":                   string(trivy.Rootfs),
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
@@ -5604,6 +5662,7 @@ default ignore = false`,
 			config: map[string]string{
 				"trivy.repository":                "docker.io/aquasec/trivy",
 				"trivy.tag":                       "0.35.0",
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.mode":                      string(trivy.ClientServer),
 				"trivy.serverURL":                 "http://trivy.trivy:4954",
 				"trivy.command":                   string(trivy.Rootfs),
@@ -5892,9 +5951,10 @@ default ignore = false`,
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.Standalone),
+				"trivy.repository":      "docker.io/aquasec/trivy",
+				"trivy.tag":             "0.35.0",
+				"trivy.imagePullPolicy": trivy.DefaultImagePullPolicy,
+				"trivy.mode":            string(trivy.Standalone),
 
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
 				"trivy.javaDbRepository":          trivy.DefaultJavaDBRepository,
@@ -6183,10 +6243,10 @@ default ignore = false`,
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.Standalone),
-
+				"trivy.repository":                "docker.io/aquasec/trivy",
+				"trivy.tag":                       "0.35.0",
+				"trivy.mode":                      string(trivy.Standalone),
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
 				"trivy.javaDbRepository":          trivy.DefaultJavaDBRepository,
 				"trivy.resources.requests.cpu":    "100m",
@@ -6498,10 +6558,10 @@ default ignore = false`,
 				trivyoperator.KeyScanJobcompressLogs:          "true",
 			},
 			config: map[string]string{
-				"trivy.repository": "docker.io/aquasec/trivy",
-				"trivy.tag":        "0.35.0",
-				"trivy.mode":       string(trivy.Standalone),
-
+				"trivy.repository":                "docker.io/aquasec/trivy",
+				"trivy.tag":                       "0.35.0",
+				"trivy.mode":                      string(trivy.Standalone),
+				"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 				"trivy.dbRepository":              trivy.DefaultDBRepository,
 				"trivy.javaDbRepository":          trivy.DefaultJavaDBRepository,
 				"trivy.resources.requests.cpu":    "100m",
@@ -6865,6 +6925,7 @@ default ignore = false`,
 		config: map[string]string{
 			"trivy.repository":                "docker.io/aquasec/trivy",
 			"trivy.tag":                       "0.35.0",
+			"trivy.imagePullPolicy":           trivy.DefaultImagePullPolicy,
 			"trivy.mode":                      string(trivy.Standalone),
 			"trivy.command":                   string(trivy.Filesystem),
 			"trivy.dbRepository":              trivy.DefaultDBRepository,
@@ -7672,12 +7733,12 @@ func TestGetContainers(t *testing.T) {
 
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
-						{Name: "init1", Image: "busybox:1.34.1"},
-						{Name: "init2", Image: "busybox:1.34.1"},
+						{Name: "init1", Image: "busybox:1.34.1", ImagePullPolicy: corev1.PullAlways},
+						{Name: "init2", Image: "busybox:1.34.1", ImagePullPolicy: corev1.PullAlways},
 					},
 					Containers: []corev1.Container{
-						{Name: "container1", Image: "busybox:1.34.1"},
-						{Name: "container2", Image: "busybox:1.34.1"},
+						{Name: "container1", Image: "busybox:1.34.1", ImagePullPolicy: corev1.PullAlways},
+						{Name: "container2", Image: "busybox:1.34.1", ImagePullPolicy: corev1.PullAlways},
 					},
 					EphemeralContainers: []corev1.EphemeralContainer{
 						{
@@ -7707,6 +7768,7 @@ func TestGetContainers(t *testing.T) {
 				"trivy.javaDbRepository": trivy.DefaultJavaDBRepository,
 				"trivy.repository":       "gcr.io/aquasec/trivy",
 				"trivy.tag":              "0.35.0",
+				"trivy.imagePullPolicy":  trivy.DefaultImagePullPolicy,
 				"trivy.mode":             string(trivy.Standalone),
 				"trivy.command":          string(trivy.Image),
 			},
@@ -7719,6 +7781,7 @@ func TestGetContainers(t *testing.T) {
 				"trivy.javaDbRepository": trivy.DefaultJavaDBRepository,
 				"trivy.repository":       "gcr.io/aquasec/trivy",
 				"trivy.tag":              "0.35.0",
+				"trivy.imagePullPolicy":  trivy.DefaultImagePullPolicy,
 				"trivy.mode":             string(trivy.ClientServer),
 				"trivy.command":          string(trivy.Image),
 			},
@@ -7731,6 +7794,7 @@ func TestGetContainers(t *testing.T) {
 				"trivy.javaDbRepository": trivy.DefaultJavaDBRepository,
 				"trivy.repository":       "docker.io/aquasec/trivy",
 				"trivy.tag":              "0.35.0",
+				"trivy.imagePullPolicy":  trivy.DefaultImagePullPolicy,
 				"trivy.mode":             string(trivy.Standalone),
 				"trivy.command":          string(trivy.Filesystem),
 			},
